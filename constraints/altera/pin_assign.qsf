@@ -1,0 +1,92 @@
+# Altera Quartus II 引脚分配文件 (QSF格式)
+# 数字电子钟系统 - EPM7128 引脚定义
+# 使用方法：将此文件内容添加到项目主QSF文件中，或通过Assignment Editor导入
+
+# 系统信号
+set_location_assignment PIN_1 -to CLR_n
+set_location_assignment PIN_55 -to MF
+set_location_assignment PIN_58 -to CP3
+
+# 控制信号
+set_location_assignment PIN_54 -to K0
+set_location_assignment PIN_81 -to K1
+set_location_assignment PIN_80 -to K2
+set_location_assignment PIN_60 -to QD
+
+# 显示输出 - LG1（秒个位，完整7段+dp）
+set_location_assignment PIN_44 -to LG1_D0
+set_location_assignment PIN_45 -to LG1_D1
+set_location_assignment PIN_46 -to LG1_D2
+set_location_assignment PIN_48 -to LG1_D3
+set_location_assignment PIN_49 -to LG1_D4
+set_location_assignment PIN_50 -to LG1_D5
+set_location_assignment PIN_51 -to LG1_D6
+set_location_assignment PIN_52 -to LG1_D7
+
+# 显示输出 - LG2（秒十位，A-D段）
+set_location_assignment PIN_37 -to LG2_A
+set_location_assignment PIN_39 -to LG2_B
+set_location_assignment PIN_40 -to LG2_C
+set_location_assignment PIN_41 -to LG2_D
+
+# 显示输出 - LG3（分个位，A-D段）
+set_location_assignment PIN_35 -to LG3_A
+set_location_assignment PIN_36 -to LG3_B
+set_location_assignment PIN_17 -to LG3_C
+set_location_assignment PIN_18 -to LG3_D
+
+# 显示输出 - LG4（分十位，A-D段）
+set_location_assignment PIN_30 -to LG4_A
+set_location_assignment PIN_31 -to LG4_B
+set_location_assignment PIN_33 -to LG4_C
+set_location_assignment PIN_34 -to LG4_D
+
+# 显示输出 - LG5（时个位，A-D段）
+set_location_assignment PIN_25 -to LG5_A
+set_location_assignment PIN_27 -to LG5_B
+set_location_assignment PIN_28 -to LG5_C
+set_location_assignment PIN_29 -to LG5_D
+
+# 显示输出 - LG6（时十位，A-D段）
+set_location_assignment PIN_20 -to LG6_A
+set_location_assignment PIN_21 -to LG6_B
+set_location_assignment PIN_22 -to LG6_C
+set_location_assignment PIN_24 -to LG6_D
+
+# I/O标准设置（根据实际硬件调整）
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to CLR_n
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to MF
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to CP3
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to K0
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to K1
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to K2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to QD
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG1_D0
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG1_D1
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG1_D2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG1_D3
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG1_D4
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG1_D5
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG1_D6
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG1_D7
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG2_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG2_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG2_C
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG2_D
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG3_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG3_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG3_C
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG3_D
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG4_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG4_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG4_C
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG4_D
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG5_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG5_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG5_C
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG5_D
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG6_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG6_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG6_C
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LG6_D
+
