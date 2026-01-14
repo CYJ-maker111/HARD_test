@@ -30,12 +30,29 @@ wire clk_1hz;          // 1Hz秒触发信号
 reg set_clk_prev;     // 用于检测set_clk的上升沿
 wire set_clk_rise;    // set_clk上升沿信号
 
+// 时间常量定义（提升可读性）
+localparam MAX_SEC_ONES  = 4'b1001; // 秒个位最大值9
+localparam MAX_SEC_TENS  = 4'b0101; // 秒十位最大值5
+localparam MAX_MIN_ONES  = 4'b1001; // 分个位最大值9
+localparam MAX_MIN_TENS  = 4'b0101; // 分十位最大值5
+localparam MAX_HOUR_ONES = 4'b1001; // 时个位最大值9
+localparam MAX_HOUR_TENS = 4'b0010; // 时十位最大值2
+localparam HOUR_23_ONES  = 4'b0011; // 23时的个位3
+
+// 辅助变量：将设置模式的选择信号转为单值（适配case）
+reg [1:0] set_mode;
+always @(*) begin
+    if (set_sec)      set_mode = 2'b01; // 设置秒
+    else if (set_min) set_mode = 2'b10; // 设置分
+    else if (set_hour)set_mode = 2'b11; // 设置时
+    else              set_mode = 2'b00; // 无选择
+end
+
 // ---------------------- 1. 1000Hz -> 1Hz 分频逻辑 ----------------------
 always @(posedge clk or negedge rst) begin
     if (!rst) begin
         clk_div_cnt <= 10'b0000000000;
     end else begin
-        // 计数到999（1000次）后清零，生成1Hz脉冲
         if (clk_div_cnt == 10'b1111100111) begin // 999
             clk_div_cnt <= 10'b0000000000;
         end else begin
@@ -43,10 +60,9 @@ always @(posedge clk or negedge rst) begin
         end
     end
 end
-// 当分频计数器到999时，clk_1hz产生一个时钟周期的高电平（1ms）
 assign clk_1hz = (clk_div_cnt == 10'b1111100111) ? 1'b1 : 1'b0;
 
-// ---------------------- 2. set_clk按键上升沿检测（1000Hz采样） ----------------------
+// ---------------------- 2. set_clk按键上升沿检测 ----------------------
 always @(posedge clk or negedge rst) begin
     if (!rst) begin
         set_clk_prev <= 1'b0;
@@ -56,7 +72,7 @@ always @(posedge clk or negedge rst) begin
 end
 assign set_clk_rise = set_clk & ~set_clk_prev;
 
-// ---------------------- 3. 复位和计时/设置模式逻辑 ----------------------
+// ---------------------- 3. 主计时/设置逻辑（修复23:59:59进位） ----------------------
 always @(posedge clk or negedge rst) begin
     if (!rst) begin
         // 复位所有计数器
@@ -66,89 +82,84 @@ always @(posedge clk or negedge rst) begin
         four_cnt <= 4'b0000;
         five_cnt <= 4'b0000;
         six_cnt <= 4'b0000;
-    end else if (set_clr) begin
-        // 设置模式：按键触发时选中位加1（1000Hz检测按键，无延迟）
-        if (set_clk_rise) begin
-            if (set_hour) begin
-                // 设置小时（24小时制边界处理）
-                if (five_cnt == 4'b1001) begin
-                    five_cnt <= 4'b0000;
-                    if (six_cnt == 4'b0010) begin
-                        six_cnt <= 4'b0000;
-                    end else begin
-                        six_cnt <= six_cnt + 4'b0001;
-                    end
-                end else if (six_cnt == 4'b0010 && five_cnt == 4'b0011) begin
-                    // 23点后回到00点
-                    five_cnt <= 4'b0000;
-                    six_cnt <= 4'b0000;
-                end else begin
-                    five_cnt <= five_cnt + 4'b0001;
-                end
-            end else if (set_min) begin
-                // 设置分钟（60分钟边界处理）
-                if (thi_cnt == 4'b1001) begin
-                    thi_cnt <= 4'b0000;
-                    if (four_cnt == 4'b0101) begin
-                        four_cnt <= 4'b0000;
-                    end else begin
-                        four_cnt <= four_cnt + 4'b0001;
-                    end
-                end else begin
-                    thi_cnt <= thi_cnt + 4'b0001;
-                end
-            end else if (set_sec) begin
-                // 设置秒（60秒边界处理）
-                if (cnt == 4'b1001) begin
+    end 
+    // 模式1：设置模式（按键调整时间，用case替代if-else if）
+    else if (set_clr && set_clk_rise) begin
+        case(set_mode)
+            2'b01: begin // 设置秒
+                if (cnt == MAX_SEC_ONES) begin
                     cnt <= 4'b0000;
-                    if (sec_cnt == 4'b0101) begin
-                        sec_cnt <= 4'b0000;
-                    end else begin
-                        sec_cnt <= sec_cnt + 4'b0001;
-                    end
+                    sec_cnt <= (sec_cnt == MAX_SEC_TENS) ? 4'b0000 : (sec_cnt + 4'b0001);
                 end else begin
                     cnt <= cnt + 4'b0001;
                 end
             end
-        end
-    end else begin
-        // 正常计时模式：仅在1Hz秒脉冲触发时进位
-        if (clk_1hz) begin
-            // 秒个位计数（0~9）
-            if (cnt == 4'b1001) begin
-                cnt <= 4'b0000;
-                // 秒十位计数（0~5）
-                if (sec_cnt == 4'b0101) begin
-                    sec_cnt <= 4'b0000;
-                    // 分个位计数（0~9）
-                    if (thi_cnt == 4'b1001) begin
-                        thi_cnt <= 4'b0000;
-                        // 分十位计数（0~5）
-                        if (four_cnt == 4'b0101) begin
-                            four_cnt <= 4'b0000;
-                            // 时个位+时十位计数（24小时制）
-                            if (six_cnt == 4'b0010 && five_cnt == 4'b0011) begin
-                                // 23:59:59 -> 00:00:00
-                                five_cnt <= 4'b0000;
-                                six_cnt <= 4'b0000;
-                            end else if (five_cnt == 4'b1001) begin
-                                five_cnt <= 4'b0000;
-                                six_cnt <= six_cnt + 4'b0001;
-                            end else begin
-                                five_cnt <= five_cnt + 4'b0001;
-                            end
-                        end else begin
-                            four_cnt <= four_cnt + 4'b0001;
-                        end
-                    end else begin
-                        thi_cnt <= thi_cnt + 4'b0001;
-                    end
+            2'b10: begin // 设置分
+                if (thi_cnt == MAX_MIN_ONES) begin
+                    thi_cnt <= 4'b0000;
+                    four_cnt <= (four_cnt == MAX_MIN_TENS) ? 4'b0000 : (four_cnt + 4'b0001);
                 end else begin
-                    sec_cnt <= sec_cnt + 4'b0001;
+                    thi_cnt <= thi_cnt + 4'b0001;
                 end
-            end else begin
-                cnt <= cnt + 4'b0001;
             end
+            2'b11: begin // 设置时
+                if (six_cnt == MAX_HOUR_TENS && five_cnt == HOUR_23_ONES) begin
+                    five_cnt <= 4'b0000;
+                    six_cnt <= 4'b0000;
+                end else if (five_cnt == MAX_HOUR_ONES) begin
+                    five_cnt <= 4'b0000;
+                    six_cnt <= six_cnt + 4'b0001;
+                end else begin
+                    five_cnt <= five_cnt + 4'b0001;
+                end
+            end
+            default: ; // 无选择，不操作
+        endcase
+    end
+    // 模式2：正常计时模式（关键修复：调整时逻辑判断顺序）
+    else if (!set_clr && clk_1hz) begin
+        // ---------------------- 秒、分进位逻辑（原逻辑不变） ----------------------
+        // 步骤1：秒个位进位（9→0）
+        if (cnt == MAX_SEC_ONES) begin
+            cnt <= 4'b0000;
+        end else begin
+            cnt <= cnt + 4'b0001;
+        end
+        // 步骤2：秒十位进位（59秒→0秒）
+        if (cnt == MAX_SEC_ONES && sec_cnt == MAX_SEC_TENS) begin
+            sec_cnt <= 4'b0000;
+        end else if (cnt == MAX_SEC_ONES) begin
+            sec_cnt <= sec_cnt + 4'b0001;
+        end
+        // 步骤3：分个位进位（59秒→分+1，9→0）
+        if (cnt == MAX_SEC_ONES && sec_cnt == MAX_SEC_TENS && thi_cnt == MAX_MIN_ONES) begin
+            thi_cnt <= 4'b0000;
+        end else if (cnt == MAX_SEC_ONES && sec_cnt == MAX_SEC_TENS) begin
+            thi_cnt <= thi_cnt + 4'b0001;
+        end
+        // 步骤4：分十位进位（59分→0分）
+        if (cnt == MAX_SEC_ONES && sec_cnt == MAX_SEC_TENS && thi_cnt == MAX_MIN_ONES && four_cnt == MAX_MIN_TENS) begin
+            four_cnt <= 4'b0000;
+        end else if (cnt == MAX_SEC_ONES && sec_cnt == MAX_SEC_TENS && thi_cnt == MAX_MIN_ONES) begin
+            four_cnt <= four_cnt + 4'b0001;
+        end
+
+        // ---------------------- 时进位逻辑（核心修复：调整判断顺序） ----------------------
+        // 【优先级最高】步骤5：23:59:59 → 00:00:00 全局清零
+        if (cnt == MAX_SEC_ONES && sec_cnt == MAX_SEC_TENS && thi_cnt == MAX_MIN_ONES && four_cnt == MAX_MIN_TENS 
+            && six_cnt == MAX_HOUR_TENS && five_cnt == HOUR_23_ONES) begin
+            five_cnt <= 4'b0000;
+            six_cnt <= 4'b0000;
+        end
+        // 步骤6：时个位到9，时十位加1（如 09:59:59 → 10:00:00）
+        else if (cnt == MAX_SEC_ONES && sec_cnt == MAX_SEC_TENS && thi_cnt == MAX_MIN_ONES && four_cnt == MAX_MIN_TENS 
+                && five_cnt == MAX_HOUR_ONES) begin
+            five_cnt <= 4'b0000;
+            six_cnt <= six_cnt + 4'b0001;
+        end
+        // 步骤7：普通情况，时个位加1（如 12:59:59 → 13:00:00）
+        else if (cnt == MAX_SEC_ONES && sec_cnt == MAX_SEC_TENS && thi_cnt == MAX_MIN_ONES && four_cnt == MAX_MIN_TENS) begin
+            five_cnt <= five_cnt + 4'b0001;
         end
     end
 end
