@@ -149,3 +149,4 @@ digital_clock/
 - **平台**: Altera MAX 7000S (EPM7128) / Xilinx Spartan-6
 - **适用场景**: 教学实验、嵌入式数字系统课程设计
 
+2222
